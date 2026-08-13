@@ -1,59 +1,188 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+ElectroShop - E-Commerce RESTful API (Laravel Backend)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A complete e-commerce RESTful API service built with Laravel. This application handles user authentication, category and product management, shopping cart operations with dynamic stock validations, and an atomic checkout system that places orders and updates database state reliably using database transactions.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+System Architecture and Key Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. Authentication System
+Developed using Laravel Sanctum to provide secure, token-based authentication for state-agnostic API clients.
+- User Registration
+- User Login with API Token generation
+- User Logout with active token revocation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+2. Catalog Management
+Structured product and category database layout with seeded real product images.
+- Fetch all categories
+- Fetch paginated/listed products with category relations
+- Retrieve specific product details
+- Built-in inventory stock monitoring
 
-## Learning Laravel
+3. Dynamic Shopping Cart Operations
+Full-featured cart management designed to prevent race conditions and over-purchasing.
+- Automatic creation or retrieval of user-specific carts
+- Pre-addition check to verify available inventory stock before adding items
+- Dynamic recalculation of total cart items and total prices
+- Cart updating (quantity modifications) and deletion capabilities (single item or full clear)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+4. Transactional Checkout System
+Robust order processing built to maintain data consistency across database tables.
+- Wrapped in database transactions (DB::transaction) for fault tolerance
+- Automated inventory deduction upon successful order placement
+- Automatic clearance of shopping cart items following checkout
+- Order history tracking for authenticated users
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+5. Frontend Decoupling (CORS Configured)
+Fully configured for Cross-Origin Resource Sharing (CORS), enabling seamless communication with decoupled SPA frontends such as React, Vue, or Next.js.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Database Schema Structure
 
-### Premium Partners
+Categories Table
+- id
+- name
+- timestamps
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Products Table
+- id
+- category_id (Foreign Key referencing Categories)
+- name
+- description
+- price
+- stock
+- image
+- timestamps
 
-## Contributing
+Carts Table
+- id
+- user_id (Foreign Key referencing Users)
+- timestamps
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Cart Items Table
+- id
+- cart_id (Foreign Key referencing Carts)
+- product_id (Foreign Key referencing Products)
+- quantity
+- timestamps
 
-## Code of Conduct
+Orders Table
+- id
+- user_id (Foreign Key referencing Users)
+- total_price
+- status
+- timestamps
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Order Items Table
+- id
+- order_id (Foreign Key referencing Orders)
+- product_id (Foreign Key referencing Products)
+- quantity
+- price
+- timestamps
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+API Endpoints Documentation
 
-## License
+Authentication
+- POST /api/register
+  Description: Register a new user account.
+  Auth Required: No
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- POST /api/login
+  Description: Authenticate credentials and generate a Sanctum API token.
+  Auth Required: No
+
+- POST /api/logout
+  Description: Revoke active session token.
+  Auth Required: Yes (Bearer Token)
+
+Products and Categories
+- GET /api/categories
+  Description: Fetch list of available categories.
+  Auth Required: No
+
+- GET /api/products
+  Description: Fetch list of products with optional relations.
+  Auth Required: No
+
+- GET /api/products/{id}
+  Description: Fetch specific product details.
+  Auth Required: No
+
+Shopping Cart
+- GET /api/cart
+  Description: Retrieve the current user's shopping cart and calculated totals.
+  Auth Required: Yes (Bearer Token)
+
+- POST /api/cart/add
+  Description: Add a product to the cart with stock availability checks.
+  Auth Required: Yes (Bearer Token)
+
+- PUT /api/cart/update/{productId}
+  Description: Modify product quantity inside the cart.
+  Auth Required: Yes (Bearer Token)
+
+- DELETE /api/cart/remove/{productId}
+  Description: Remove a specific item from the cart.
+  Auth Required: Yes (Bearer Token)
+
+- DELETE /api/cart/clear
+  Description: Empty all items from the current cart.
+  Auth Required: Yes (Bearer Token)
+
+Checkout and Orders
+- POST /api/cart/checkout
+  Description: Process cart checkout, decrease product stock, clear cart, and generate an order inside a database transaction.
+  Auth Required: Yes (Bearer Token)
+
+- GET /api/orders
+  Description: Fetch order history for the authenticated user.
+  Auth Required: Yes (Bearer Token)
+
+- GET /api/orders/{id}
+  Description: Fetch details of a specific order.
+  Auth Required: Yes (Bearer Token)
+
+---
+
+Local Setup and Installation
+
+1. Clone the repository to your local machine:
+   git clone https://github.com/A7med3mr0/ElectroShop.git
+   cd ElectroShop
+
+2. Install PHP dependencies using Composer:
+   composer install
+
+3. Create environment configuration file:
+   cp .env.example .env
+
+4. Configure database settings inside .env file:
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=ElectroShop
+   DB_USERNAME=root
+   DB_PASSWORD=
+
+5. Generate application security key:
+   php artisan key:generate
+
+6. Run migrations and database seeders:
+   php artisan migrate --seed
+
+7. Start the Laravel development server:
+   php artisan serve
+
+---
+
+Request Headers for Protected Endpoints
+
+When consuming protected endpoints via HTTP clients (e.g., Axios or Postman), include the following headers:
+
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <YOUR_SANCTUM_TOKEN>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\NewsletterController;
 
 // All Product Routes
 Route::prefix('products')->group(function () {
@@ -82,11 +83,13 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::prefix('cart')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [CartController::class, 'index']);
     Route::post('/add', [CartController::class, 'add']);
-    Route::put('/update/{productId}', [CartController::class, 'updateQuantity']); 
+    Route::put('/update/{productId}', [CartController::class, 'updateQuantity']);
     Route::delete('/remove/{productId}', [CartController::class, 'removeItem']);
     Route::delete('/clear', [CartController::class, 'clear']);
     Route::post('/checkout', [CartController::class, 'checkout']);
 });
+
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
 
 
 
