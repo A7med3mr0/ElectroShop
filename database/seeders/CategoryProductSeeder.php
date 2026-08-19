@@ -141,25 +141,30 @@ class CategoryProductSeeder extends Seeder
         ];
 
         foreach ($categories as $catData) {
-            $category = Category::create([
-                'name' => $catData['name'],
-                'slug' => $catData['slug'],
-                'image' => $catData['image']
-            ]);
+            $category = Category::firstOrCreate(
+                ['slug' => $catData['slug']],
+                [
+                    'name' => $catData['name'],
+                    'image' => $catData['image']
+                ]
+            );
 
             foreach ($catData['products'] as $prodData) {
-                Product::create([
-                    'category_id' => $category->id,
-                    'name' => $prodData['name'],
-                    'slug' => Str::slug($prodData['name']),
-                    'description' => $prodData['description'],
-                    'price' => $prodData['price'],
-                    'stock' => rand(5, 20),
-                    'primary_image' => $prodData['primary_image'],
-                    'specs' => $prodData['specs'],
-                    'is_active' => true
-                ]);
+                Product::firstOrCreate(
+                    ['slug' => Str::slug($prodData['name'])],
+                    [
+                        'category_id' => $category->id,
+                        'name' => $prodData['name'],
+                        'description' => $prodData['description'],
+                        'price' => $prodData['price'],
+                        'stock' => rand(5, 20),
+                        'primary_image' => $prodData['primary_image'],
+                        'specs' => $prodData['specs'],
+                        'is_active' => true
+                    ]
+                );
             }
         }
     }
 }
+

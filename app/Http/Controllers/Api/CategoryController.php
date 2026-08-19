@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -40,21 +41,23 @@ class CategoryController extends Controller
     }
 
 
+
     public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
+{
+    $validatedData = $request->validate([
+        'name' => 'required|string|max:255',
+    ]);
 
-        $category = Category::create($validatedData);
+    $validatedData['slug'] = Str::slug($validatedData['name']);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Category created successfully',
-            'data' => $category
-        ], 201);
-    }
+    $category = Category::create($validatedData);
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Category created successfully',
+        'data'    => $category
+    ], 201);
+}
 
 
     public function update(Request $request, $id)
@@ -237,7 +240,7 @@ class CategoryController extends Controller
         ], 200);
     }
 
-    
+
     public function paginateProducts(Request $request, $id)
     {
         $category = Category::find($id);

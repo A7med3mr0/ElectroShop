@@ -131,62 +131,70 @@ class CartController extends Controller
 
 
     public function checkout(Request $request)
-    {
-        $cart = $this->getUserCart($request);
+{
 
-        if ($cart->isEmpty()) {
+    $request->validate([
+        'phone'            => 'required|string|max:20',
+        'shipping_address' => 'required|string|max:500',
+    ]);
+
+    $cart = $this->getUserCart($request);
+
+    if ($cart->isEmpty()) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Your cart is empty.',
+        ], 400);
+    }
+
+
+    foreach ($cart->items()->with('product')->get() as $item) {
+        if (!$item->product || $item->product->stock < $item->quantity) {
             return response()->json([
                 'status'  => false,
-                'message' => 'Your cart is empty.',
+                'message' => "The requested quantity for product '{$item->product->name}' is not available.",
             ], 400);
         }
+    }
 
-        // 1. التحقق من المخزون قبل فتح المعاملة (Transaction)
-        foreach ($cart->items()->with('product')->get() as $item) {
-            if (!$item->product || $item->product->stock < $item->quantity) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => "The requested quantity for product '{$item->product->name}' is not available.",
-                ], 400);
-            }
-        }
+    
+    try {
+        $order = DB::transaction(function () use ($cart, $request) {
+            $order = Order::create([
+                'user_id'          => $request->user()->id,
+                'total_price'      => $cart->totalPrice(),
+                'status'           => 'pending',
+                'phone'            => $request->phone,
+                'shipping_address' => $request->shipping_address,
+            ]);
 
-        
-        try {
-            $order = DB::transaction(function () use ($cart, $request) {
-                $order = Order::create([
-                    'user_id'     => $request->user()->id,
-                    'total_price' => $cart->totalPrice(),
-                    'status'      => 'pending',
+            foreach ($cart->items as $item) {
+                $order->items()->create([
+                    'product_id' => $item->product_id,
+                    'quantity'   => $item->quantity,
+                    'price'      => $item->product->price,
                 ]);
 
-                foreach ($cart->items as $item) {
-                    $order->items()->create([
-                        'product_id' => $item->product_id,
-                        'quantity'   => $item->quantity,
-                        'price'      => $item->product->price,
-                    ]);
+                $item->product->decrement('stock', $item->quantity);
+            }
 
-                    $item->product->decrement('stock', $item->quantity);
-                }
+            $cart->clear();
 
-                $cart->clear();
+            return $order;
+        });
 
-                return $order;
-            });
+        return response()->json([
+            'status'   => true,
+            'message'  => 'Checkout successful. Your order has been placed.',
+            'order_id' => $order->id,
+        ], 200);
 
-            return response()->json([
-                'status'   => true,
-                'message'  => 'Checkout successful. Your order has been placed.',
-                'order_id' => $order->id,
-            ], 200);
-
-        } catch (Exception $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'An error occurred during checkout. Please try again.',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
+    } catch (Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'An error occurred during checkout. Please try again.',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
 }

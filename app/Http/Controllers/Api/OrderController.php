@@ -142,12 +142,22 @@ class OrderController extends Controller
     }
 
     public function updateStatus(Request $request, $id)
-    {
-        $request->validate([
+{
+    
+    if (!$request->user() || !$request->user()->is_admin) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Unauthorized. Admin access required.',
+        ], 403);
+    }
+
+
+    $request->validate([
         'status' => 'required|in:pending,processed,shipped,delivered,cancelled',
     ]);
 
-    $order = Order::with('items')->where('user_id', $request->user()->id)->find($id);
+
+    $order = Order::with('items')->find($id);
 
     if (!$order) {
         return response()->json([
@@ -156,7 +166,7 @@ class OrderController extends Controller
         ], 404);
     }
 
-    
+
     if ($request->status === 'cancelled' && $order->status !== 'cancelled') {
         DB::transaction(function () use ($order) {
             foreach ($order->items as $item) {
@@ -173,7 +183,7 @@ class OrderController extends Controller
         'message' => 'Order status updated successfully',
         'data'    => $order->fresh('items.product'),
     ], 200);
-    }
+}
 
     public function destroy(Request $request, $id)
     {
