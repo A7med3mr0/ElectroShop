@@ -33,7 +33,13 @@ Robust order processing built to maintain data consistency across database table
 - Automatic clearance of shopping cart items following checkout
 - Order history tracking for authenticated users
 
-5. Frontend Decoupling (CORS Configured)
+5. Automated Testing & Quality Assurance
+Comprehensive Feature Test Suite built using PHPUnit to ensure API stability and data integrity.
+- Isolated database testing using `RefreshDatabase`
+- Test Coverage for Authentication, Cart lifecycle, Stock validation, and Checkout transactions
+- Dynamic data mocking via Laravel Database Factories
+
+6. Frontend Decoupling (CORS Configured)
 Fully configured for Cross-Origin Resource Sharing (CORS), enabling seamless communication with decoupled SPA frontends such as React, Vue, or Next.js.
 
 ---
@@ -179,10 +185,16 @@ Local Setup and Installation
 
 ---
 
-Request Headers for Protected Endpoints
+Running Automated Tests
 
-When consuming protected endpoints via HTTP clients (e.g., Axios or Postman), include the following headers:
+To run the full PHPUnit test suite (Feature & Unit tests):
 
-Accept: application/json
-Content-Type: application/json
-Authorization: Bearer <YOUR_SANCTUM_TOKEN>
+```bash
+# Run all automated tests
+php artisan test
+
+# Filter and run a specific test suite (e.g., Cart Lifecycle)
+php artisan test --filter CartTest
+
+# Run tests with code coverage report (Requires PCOV or Xdebug extension)
+php artisan test --coverage
